@@ -1,0 +1,34 @@
+{
+  "tests": [
+    {
+      "name": "Summarises email in bullet points",
+      "prompt": "summarise-email",
+      "input": {
+        "email": "Hi team, the Q3 results are in. Revenue was up 12% YoY, costs down 8%. We hit our hiring targets and launched 3 new features. Great work everyone.",
+        "tone": "professional"
+      },
+      "expected_output": "Revenue up 12%, costs down 8%, hiring targets met, 3 features launched",
+      "threshold": 0.75
+    },
+    {
+      "name": "Handles empty email gracefully",
+      "prompt": "summarise-email",
+      "input": {
+        "email": "No content.",
+        "tone": "casual"
+      },
+      "expected_output": "No meaningful content to summarise",
+      "threshold": 0.5
+    },
+    {
+      "name": "Welcome email is friendly",
+      "prompt": "welcome-email",
+      "input": {
+        "name": "Alice",
+        "product": "PromptOps"
+      },
+      "expected_output": "Welcome Alice to PromptOps",
+      "threshold": 0.7
+    }
+  ]
+}

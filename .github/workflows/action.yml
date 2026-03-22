@@ -1,0 +1,49 @@
+name: 'PromptOps — Prompt CI'
+description: 'Run prompt regression tests on every PR. Block merges when prompts drift.'
+author: 'PromptOps'
+
+branding:
+  icon: 'zap'
+  color: 'purple'
+
+inputs:
+  api-key:
+    description: 'Your PromptOps API key (use secrets.PROMPTOPS_KEY)'
+    required: true
+  suite:
+    description: 'Path to your prompt test suite JSON file'
+    required: false
+    default: './promptops.tests.json'
+  threshold:
+    description: 'Minimum semantic similarity score to pass (0.0–1.0)'
+    required: false
+    default: '0.85'
+  base-url:
+    description: 'PromptOps server URL (for self-hosted deployments)'
+    required: false
+    default: 'https://api.promptops.dev'
+  fail-on-drift:
+    description: 'Fail the workflow if any test does not pass'
+    required: false
+    default: 'true'
+  model:
+    description: 'LLM model to use for testing'
+    required: false
+    default: 'gpt-4o-mini'
+  openai-api-key:
+    description: 'OpenAI API key for running test cases'
+    required: false
+
+outputs:
+  passed:
+    description: 'Number of tests that passed'
+  failed:
+    description: 'Number of tests that failed'
+  total:
+    description: 'Total number of tests run'
+  report:
+    description: 'Path to the JSON test report'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

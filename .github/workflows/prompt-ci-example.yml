@@ -1,0 +1,32 @@
+name: Prompt Regression Tests
+
+on:
+  pull_request:
+    paths:
+      - 'prompts/**'
+      - 'promptops.tests.json'
+
+jobs:
+  prompt-ci:
+    name: Run Prompt Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run PromptOps Tests
+        uses: your-username/promptops@v1
+        with:
+          api-key: ${{ secrets.PROMPTOPS_KEY }}
+          suite: ./promptops.tests.json
+          threshold: 0.85
+          fail-on-drift: true
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prompt-test-report
+          path: ${{ steps.prompt-ci.outputs.report }}
