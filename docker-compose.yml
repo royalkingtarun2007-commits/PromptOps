@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: promptops-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: promptops
+      POSTGRES_PASSWORD: promptops
+      POSTGRES_DB: promptops
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/api/src/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U promptops']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── API Server ───────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: promptops-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://promptops:promptops@postgres:5432/promptops
+      PORT: 3001
+      NODE_ENV: production
+      ALLOWED_ORIGINS: http://localhost:3000
+    ports:
+      - '3001:3001'
+
+  # ── Dashboard (Next.js) ──────────────────────
+  dashboard:
+    build:
+      context: ./apps/dashboard
+      dockerfile: Dockerfile
+    container_name: promptops-dashboard
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - '3000:3000'
+
+volumes:
+  postgres_data:
