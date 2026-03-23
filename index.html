@@ -5,648 +5,452 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>PromptOps — Git for Prompts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=JetBrains+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #09090b;
-    --surface: #111113;
-    --surface2: #18181b;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #f4f4f5;
-    --muted: #71717a;
-    --muted2: #a1a1aa;
-    --accent: #7c6af7;
-    --accent2: #a78bfa;
-    --accent3: #c4b5fd;
-    --green: #4ade80;
-    --amber: #fbbf24;
-    --red: #f87171;
-    --blue: #60a5fa;
-    --mono: 'DM Mono', monospace;
-    --sans: 'DM Sans', sans-serif;
-    --display: 'Syne', sans-serif;
-  }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 16px;
-    line-height: 1.6;
-    overflow-x: hidden;
-  }
-
-  /* ── NOISE TEXTURE ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* ── NAV ── */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 48px;
-    height: 60px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(9,9,11,0.85);
-    backdrop-filter: blur(12px);
-  }
-
-  .nav-logo {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .nav-logo-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(0.85); }
-  }
-
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    color: var(--muted2);
-    text-decoration: none;
-    font-size: 14px;
-    transition: color 0.2s;
-  }
-
-  .nav-links a:hover { color: var(--text); }
-
-  .nav-cta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .btn-ghost {
-    padding: 8px 16px;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--muted2);
-    font-family: var(--sans);
-    font-size: 14px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-
-  .btn-ghost:hover {
-    border-color: rgba(255,255,255,0.25);
-    color: var(--text);
-    background: var(--surface2);
-  }
-
-  .btn-primary {
-    padding: 8px 20px;
-    border: none;
-    border-radius: 8px;
-    background: var(--accent);
-    color: #fff;
-    font-family: var(--sans);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-
-  .btn-primary:hover {
-    background: var(--accent2);
-    transform: translateY(-1px);
-  }
-
-  /* ── HERO ── */
-  .hero {
-    position: relative;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 120px 24px 80px;
-    text-align: center;
-    overflow: hidden;
-  }
-
-  .hero-glow {
-    position: absolute;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 700px;
-    height: 400px;
-    background: radial-gradient(ellipse at center, rgba(124,106,247,0.15) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .hero-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 60px 60px;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 100%);
-    pointer-events: none;
-  }
-
-  .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    border: 1px solid rgba(124,106,247,0.3);
-    border-radius: 100px;
-    background: rgba(124,106,247,0.08);
-    font-size: 13px;
-    color: var(--accent3);
-    margin-bottom: 28px;
-    animation: fade-up 0.6s ease both;
-  }
-
-  .hero-badge-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse-dot 1.5s ease-in-out infinite;
-  }
-
-  .hero-h1 {
-    font-family: var(--display);
-    font-size: clamp(48px, 7vw, 88px);
-    font-weight: 800;
-    line-height: 1.0;
-    letter-spacing: -0.04em;
-    margin-bottom: 24px;
-    animation: fade-up 0.6s ease 0.1s both;
-  }
-
-  .hero-h1 span {
-    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent3) 50%, #e0d7ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-sub {
-    font-size: clamp(16px, 2vw, 20px);
-    color: var(--muted2);
-    max-width: 560px;
-    line-height: 1.6;
-    margin-bottom: 40px;
-    font-weight: 300;
-    animation: fade-up 0.6s ease 0.2s both;
-  }
-
-  .hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 64px;
-    animation: fade-up 0.6s ease 0.3s both;
-  }
-
-  .btn-hero {
-    padding: 14px 28px;
-    border: none;
-    border-radius: 10px;
-    background: var(--accent);
-    color: #fff;
-    font-family: var(--sans);
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
-    box-shadow: 0 0 32px rgba(124,106,247,0.3);
-  }
-
-  .btn-hero:hover {
-    background: var(--accent2);
-    transform: translateY(-2px);
-    box-shadow: 0 0 48px rgba(124,106,247,0.45);
-  }
-
-  .btn-hero-ghost {
-    padding: 14px 28px;
-    border: 1px solid var(--border2);
-    border-radius: 10px;
-    background: transparent;
-    color: var(--muted2);
-    font-family: var(--sans);
-    font-size: 15px;
-    cursor: pointer;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
-  }
-
-  .btn-hero-ghost:hover {
-    color: var(--text);
-    border-color: rgba(255,255,255,0.25);
-    background: var(--surface2);
-  }
-
-  .hero-stats {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-    animation: fade-up 0.6s ease 0.4s both;
-  }
-
-  .hero-stat {
-    text-align: center;
-  }
-
-  .hero-stat-num {
-    font-family: var(--display);
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .hero-stat-label {
-    font-size: 12px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 2px;
-  }
-
-  .hero-divider {
-    width: 1px;
-    height: 32px;
-    background: var(--border2);
-  }
-
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── CODE DEMO ── */
-  .demo-section {
-    position: relative;
-    padding: 0 24px 100px;
-    max-width: 900px;
-    margin: 0 auto;
-    animation: fade-up 0.8s ease 0.5s both;
-  }
-
-  .demo-window {
-    border: 1px solid var(--border2);
-    border-radius: 14px;
-    overflow: hidden;
-    background: var(--surface);
-  }
-
-  .demo-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface2);
-  }
-
-  .demo-dot {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-  }
-
-  .demo-tab-bar {
-    display: flex;
-    gap: 2px;
-    margin-left: 12px;
-  }
-
-  .demo-tab {
-    padding: 4px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-family: var(--mono);
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .demo-tab.active {
-    background: rgba(124,106,247,0.15);
-    color: var(--accent3);
-  }
-
-  .demo-body {
-    padding: 28px 32px;
-    font-family: var(--mono);
-    font-size: 14px;
-    line-height: 1.8;
-    overflow-x: auto;
-  }
-
-  .code-panel { display: none; }
-  .code-panel.active { display: block; }
-
-  .c-keyword  { color: #c792ea; }
-  .c-fn       { color: #82aaff; }
-  .c-string   { color: #c3e88d; }
-  .c-comment  { color: #546e7a; font-style: italic; }
-  .c-var      { color: #f8cba0; }
-  .c-num      { color: #f78c6c; }
-  .c-op       { color: var(--muted2); }
-
-  /* ── FEATURES ── */
-  .features {
-    padding: 80px 24px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-
-  .section-eyebrow {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 12px;
-  }
-
-  .section-title {
-    font-family: var(--display);
-    font-size: clamp(32px, 4vw, 48px);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    margin-bottom: 16px;
-  }
-
-  .section-sub {
-    color: var(--muted2);
-    font-size: 17px;
-    max-width: 520px;
-    font-weight: 300;
-    margin-bottom: 60px;
-  }
-
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-  }
-
-  .feature-card {
-    padding: 28px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--surface);
-    transition: all 0.25s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .feature-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .feature-card:hover {
-    border-color: rgba(124,106,247,0.25);
-    transform: translateY(-2px);
-    background: var(--surface2);
-  }
-
-  .feature-card:hover::before { opacity: 1; }
-
-  .feature-icon {
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    margin-bottom: 18px;
-  }
-
-  .feature-title {
-    font-family: var(--display);
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
-  }
-
-  .feature-desc {
-    color: var(--muted2);
-    font-size: 14px;
-    line-height: 1.65;
-    font-weight: 300;
-  }
-
-  /* ── COMPARISON TABLE ── */
-  .compare {
-    padding: 80px 24px;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .compare-table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-
-  .compare-table th {
-    padding: 16px 20px;
-    font-family: var(--display);
-    font-weight: 600;
-    font-size: 14px;
-    background: var(--surface2);
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .compare-table th:first-child { color: var(--muted2); }
-  .compare-table th.highlight { color: var(--accent2); }
-
-  .compare-table td {
-    padding: 14px 20px;
-    font-size: 14px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .compare-table tr:last-child td { border-bottom: none; }
-
-  .compare-table td:first-child {
-    color: var(--muted2);
-    font-size: 13px;
-  }
-
-  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .check { color: var(--green); font-size: 16px; }
-  .cross { color: var(--red); opacity: 0.5; font-size: 16px; }
-  .partial { color: var(--amber); font-size: 13px; }
-
-  /* ── INSTALL ── */
-  .install {
-    padding: 80px 24px;
-    max-width: 800px;
-    margin: 0 auto;
-    text-align: center;
-  }
-
-  .install-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin: 48px 0;
-    text-align: left;
-  }
-
-  .install-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 20px 24px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--surface);
-  }
-
-  .install-step-num {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: rgba(124,106,247,0.15);
-    border: 1px solid rgba(124,106,247,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--accent2);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .install-step-content { flex: 1; }
-  .install-step-title {
-    font-weight: 500;
-    margin-bottom: 6px;
-    font-size: 15px;
-  }
-
-  .install-step-code {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--accent3);
-    background: rgba(124,106,247,0.08);
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: 1px solid rgba(124,106,247,0.15);
-    display: inline-block;
-  }
-
-  /* ── FOOTER ── */
-  footer {
-    padding: 48px 48px 32px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-
-  .footer-logo {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 16px;
-    color: var(--muted);
-  }
-
-  .footer-links {
-    display: flex;
-    gap: 24px;
-    list-style: none;
-  }
-
-  .footer-links a {
-    color: var(--muted);
-    font-size: 13px;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .footer-links a:hover { color: var(--muted2); }
-
-  .footer-copy {
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#030712;
+  --surface:#0c1122;
+  --surface2:#111827;
+  --border:rgba(255,255,255,0.05);
+  --border2:rgba(255,255,255,0.09);
+  --text:#f9fafb;
+  --muted:#4b5563;
+  --muted2:#9ca3af;
+  --accent:#6366f1;
+  --accent2:#818cf8;
+  --accent3:#a5b4fc;
+  --serif:'EB Garamond',Georgia,serif;
+  --display:'Cormorant Garamond',Georgia,serif;
+  --mono:'JetBrains Mono',monospace;
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--serif);
+  font-size:16px;
+  line-height:1.6;
+  overflow-x:hidden;
+}
+
+#bg-canvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+}
+
+/* NAV */
+nav{
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:100;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 56px;
+  height:64px;
+  border-bottom:1px solid var(--border);
+  background:rgba(3,7,18,0.82);
+  backdrop-filter:blur(20px);
+}
+
+.nav-logo{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:22px;
+  letter-spacing:0.08em;
+  color:var(--text);
+  text-decoration:none;
+  font-style:italic;
+  background:linear-gradient(135deg,#f9fafb 0%,#a5b4fc 60%,#818cf8 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:40px;
+  list-style:none;
+}
+
+.nav-links a{
+  color:var(--muted2);
+  text-decoration:none;
+  font-size:15px;
+  font-family:var(--serif);
+  transition:color 0.2s;
+}
+
+.nav-links a:hover{color:var(--text)}
+
+.nav-cta{display:flex;align-items:center;gap:12px}
+
+.btn-nav{
+  padding:8px 20px;
+  border:1px solid var(--border2);
+  border-radius:8px;
+  background:transparent;
+  color:var(--muted2);
+  font-family:var(--serif);
+  font-size:14px;
+  cursor:pointer;
+  text-decoration:none;
+  transition:all 0.2s;
+}
+
+.btn-nav:hover{border-color:rgba(255,255,255,0.18);color:var(--text);background:var(--surface2)}
+
+.btn-nav-solid{
+  padding:8px 20px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;
+  font-family:var(--serif);
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  text-decoration:none;
+  transition:all 0.2s;
+  display:flex;align-items:center;gap:6px;
+}
+
+.btn-nav-solid:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(99,102,241,0.35)}
+
+/* HERO */
+.hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:140px 24px 100px;
+  text-align:center;
+  z-index:1;
+}
+
+.hero-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:7px 20px;
+  border:1px solid rgba(99,102,241,0.2);
+  border-radius:100px;
+  background:rgba(99,102,241,0.05);
+  font-size:12px;
+  font-family:var(--mono);
+  color:var(--accent3);
+  margin-bottom:40px;
+  letter-spacing:0.06em;
+  opacity:0;
+  animation:fadeUp 0.8s ease 0.2s forwards;
+}
+
+.badge-dot{
+  width:5px;height:5px;
+  border-radius:50%;
+  background:var(--accent);
+  animation:blink 2.5s ease-in-out infinite;
+}
+
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+
+/* HERO TITLE — the centerpiece */
+.hero-title-wrap{
+  position:relative;
+  margin-bottom:32px;
+  opacity:0;
+  animation:fadeUp 0.9s ease 0.35s forwards;
+}
+
+.hero-git{
+  display:block;
+  font-family:var(--display);
+  font-size:clamp(22px,3vw,34px);
+  font-weight:300;
+  font-style:italic;
+  color:var(--muted2);
+  letter-spacing:0.12em;
+  margin-bottom:8px;
+  animation:shimmer 4s ease-in-out infinite;
+}
+
+@keyframes shimmer{
+  0%,100%{color:var(--muted2)}
+  50%{color:var(--accent3)}
+}
+
+.hero-for{
+  display:block;
+  font-family:var(--display);
+  font-size:clamp(18px,2.5vw,28px);
+  font-weight:300;
+  font-style:italic;
+  color:var(--muted);
+  letter-spacing:0.18em;
+  margin-bottom:10px;
+}
+
+.hero-prompts{
+  display:block;
+  font-family:var(--display);
+  font-size:clamp(72px,11vw,130px);
+  font-weight:600;
+  font-style:italic;
+  letter-spacing:-0.03em;
+  line-height:0.9;
+  background:linear-gradient(135deg,#e0e7ff 0%,#a5b4fc 35%,#818cf8 60%,#6366f1 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  background-size:200% 200%;
+  animation:gradientShift 6s ease-in-out infinite;
+  position:relative;
+}
+
+.hero-prompts::after{
+  content:'Prompts.';
+  position:absolute;
+  inset:0;
+  font-family:var(--display);
+  font-size:inherit;
+  font-weight:600;
+  font-style:italic;
+  letter-spacing:inherit;
+  line-height:inherit;
+  background:linear-gradient(135deg,#e0e7ff 0%,#a5b4fc 35%,#818cf8 60%,#6366f1 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  background-size:200% 200%;
+  animation:gradientShift 6s ease-in-out infinite;
+  filter:blur(24px);
+  opacity:0.35;
+  z-index:-1;
+}
+
+@keyframes gradientShift{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.hero-sub{
+  font-size:clamp(17px,2vw,21px);
+  color:var(--muted2);
+  max-width:560px;
+  line-height:1.7;
+  margin-bottom:48px;
+  font-weight:400;
+  opacity:0;
+  animation:fadeUp 0.8s ease 0.55s forwards;
+}
+
+.hero-actions{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-bottom:80px;
+  opacity:0;
+  animation:fadeUp 0.8s ease 0.7s forwards;
+}
+
+.btn-hero{
+  padding:16px 36px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;
+  font-family:var(--serif);
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  text-decoration:none;
+  display:flex;align-items:center;gap:9px;
+  transition:all 0.25s;
+  box-shadow:0 0 48px rgba(99,102,241,0.22);
+  letter-spacing:0.01em;
+}
+
+.btn-hero:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 64px rgba(99,102,241,0.4);
+}
+
+.btn-hero-ghost{
+  padding:16px 36px;
+  border:1px solid var(--border2);
+  border-radius:12px;
+  background:transparent;
+  color:var(--muted2);
+  font-family:var(--serif);
+  font-size:16px;
+  cursor:pointer;
+  text-decoration:none;
+  display:flex;align-items:center;gap:9px;
+  transition:all 0.25s;
+}
+
+.btn-hero-ghost:hover{
+  color:var(--text);
+  border-color:rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.03);
+}
+
+.hero-stats{
+  display:flex;
+  align-items:center;
+  gap:48px;
+  opacity:0;
+  animation:fadeUp 0.8s ease 0.85s forwards;
+}
+
+.stat{text-align:center}
+.stat-val{
+  font-family:var(--display);
+  font-size:32px;
+  font-weight:600;
+  color:var(--text);
+  letter-spacing:-0.03em;
+  font-style:italic;
+}
+.stat-lbl{
+  font-size:11px;
+  font-family:var(--mono);
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.1em;
+  margin-top:4px;
+}
+.stat-sep{width:1px;height:40px;background:var(--border2)}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* CODE DEMO */
+.demo-wrap{
+  max-width:940px;
+  margin:0 auto;
+  padding:0 24px 120px;
+  position:relative;z-index:1;
+  opacity:0;
+  animation:fadeUp 0.9s ease 1s forwards;
+}
+
+.demo-window{
+  border:1px solid var(--border2);
+  border-radius:18px;
+  overflow:hidden;
+  background:var(--surface);
+}
+
+.demo-bar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px 24px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+
+.dot{width:12px;height:12px;border-radius:50%}
+.tabs{display:flex;gap:2px;margin-left:14px}
+.tab{
+  padding:5px 18px;
+  border-radius:7px;
+  font-size:12px;
+  font-family:var(--mono);
+  color:var(--muted);
+  cursor:pointer;
+  transition:all 0.15s;
+  letter-spacing:0.02em;
+}
+.tab.on{background:rgba(99,102,241,0.12);color:var(--accent3)}
+.demo-body{padding:32px 36px;font-family:var(--mono);font-size:13.5px;line-height:1.9;overflow-x:auto}
+.panel{display:none}.panel.on{display:block}
+.kw{color:#c084fc}.fn{color:#7dd3fc}.str{color:#86efac}
+.cm{color:#374151;font-style:italic}.vr{color:#fcd34d}.nm{color:#f97316}.op{color:var(--muted2)}
+
+/* FEATURES */
+.features-section{padding:100px 24px;max-width:1140px;margin:0 auto;position:relative;z-index:1}
+.section-lbl{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.16em;margin-bottom:16px;font-weight:500}
+.section-h{font-family:var(--display);font-size:clamp(36px,5vw,58px);font-weight:600;font-style:italic;letter-spacing:-0.03em;line-height:1.05;margin-bottom:18px}
+.section-h span{-webkit-text-fill-color:transparent;background:linear-gradient(135deg,#a5b4fc,#818cf8);-webkit-background-clip:text;background-clip:text}
+.section-sub{color:var(--muted2);font-size:18px;max-width:520px;margin-bottom:68px;line-height:1.7}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat{
+  padding:32px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:var(--surface);
+  transition:all 0.3s;
+  position:relative;overflow:hidden;
+}
+.feat::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:0;transition:opacity 0.3s;
+}
+.feat:hover{border-color:rgba(99,102,241,0.22);transform:translateY(-4px);background:var(--surface2)}
+.feat:hover::before{opacity:1}
+.feat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:22px;background:rgba(99,102,241,0.09)}
+.feat-title{font-family:var(--display);font-size:21px;font-weight:600;font-style:italic;margin-bottom:11px;letter-spacing:-0.02em}
+.feat-desc{color:var(--muted2);font-size:15px;line-height:1.7}
+
+/* COMPARE */
+.compare-section{padding:100px 24px;max-width:940px;margin:0 auto;text-align:center;position:relative;z-index:1}
+.compare-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:18px;overflow:hidden;text-align:left;margin-top:60px}
+.compare-table th{padding:17px 24px;font-family:var(--display);font-weight:600;font-style:italic;font-size:16px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.compare-table th:first-child{color:var(--muted2);font-style:normal;font-weight:400}
+.compare-table th.hl{color:var(--accent3)}
+.compare-table td{padding:14px 24px;font-size:14px;border-bottom:1px solid var(--border);font-family:var(--serif)}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-table td:first-child{color:var(--muted2)}
+.compare-table tr:hover td{background:rgba(255,255,255,0.012)}
+.yes{color:#10b981;font-size:16px}.no{color:var(--muted);font-size:16px}
+.partial{color:#f59e0b;font-size:12px;font-family:var(--mono)}
+
+/* INSTALL */
+.install-section{padding:100px 24px;max-width:840px;margin:0 auto;text-align:center;position:relative;z-index:1}
+.steps{display:flex;flex-direction:column;gap:14px;margin:60px 0;text-align:left}
+.step{display:flex;align-items:flex-start;gap:20px;padding:24px 28px;border:1px solid var(--border);border-radius:16px;background:var(--surface);transition:border-color 0.2s}
+.step:hover{border-color:rgba(99,102,241,0.18)}
+.step-n{width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.22);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent3);flex-shrink:0;font-family:var(--mono)}
+.step-title{font-family:var(--display);font-size:17px;font-weight:600;font-style:italic;margin-bottom:9px;letter-spacing:-0.01em}
+.step-code{font-family:var(--mono);font-size:12.5px;color:var(--accent3);background:rgba(99,102,241,0.06);padding:9px 16px;border-radius:9px;border:1px solid rgba(99,102,241,0.1);display:inline-block;letter-spacing:0.01em}
+
+/* FOOTER */
+footer{padding:52px 56px 36px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;position:relative;z-index:1}
+.footer-logo{font-family:var(--display);font-weight:600;font-style:italic;font-size:19px;letter-spacing:0.06em;background:linear-gradient(135deg,#f9fafb,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.footer-links{display:flex;gap:28px;list-style:none}
+.footer-links a{color:var(--muted);font-size:14px;font-family:var(--serif);text-decoration:none;transition:color 0.2s}
+.footer-links a:hover{color:var(--muted2)}
+.footer-copy{color:var(--muted);font-size:12px;font-family:var(--mono)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
+<canvas id="bg-canvas"></canvas>
+
 <nav>
-  <a class="nav-logo" href="#">
-    <span class="nav-logo-dot"></span>
-    PromptOps
-  </a>
+  <a class="nav-logo" href="#">PromptOps</a>
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
     <li><a href="#compare">Compare</a></li>
@@ -654,33 +458,34 @@
     <li><a href="#">Docs</a></li>
   </ul>
   <div class="nav-cta">
-    <a href="#" class="btn-ghost">Sign in</a>
-    <a href="https://github.com" class="btn-primary">Star on GitHub ★</a>
+    <a href="#" class="btn-nav">Sign in</a>
+    <a href="https://github.com" class="btn-nav-solid">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+      Star on GitHub
+    </a>
   </div>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
-  <div class="hero-glow"></div>
-  <div class="hero-grid"></div>
-
   <div class="hero-badge">
-    <span class="hero-badge-dot"></span>
-    Open source · Self-hostable · Framework agnostic
+    <span class="badge-dot"></span>
+    Open source &nbsp;·&nbsp; Self-hostable &nbsp;·&nbsp; Framework agnostic
   </div>
 
-  <h1 class="hero-h1">
-    Git for<br/><span>Prompts.</span>
-  </h1>
+  <div class="hero-title-wrap">
+    <span class="hero-git">Git</span>
+    <span class="hero-for">for</span>
+    <span class="hero-prompts">Prompts.</span>
+  </div>
 
   <p class="hero-sub">
     Version control, A/B testing, PR-style reviews, and CI/CD for your LLM prompts.
-    Works with every model. Deploy in minutes.
+    Works with every model. Deploys in minutes.
   </p>
 
   <div class="hero-actions">
     <a href="#install" class="btn-hero">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
       Get started free
     </a>
     <a href="https://github.com" class="btn-hero-ghost">
@@ -690,247 +495,167 @@
   </div>
 
   <div class="hero-stats">
-    <div class="hero-stat">
-      <div class="hero-stat-num">3 lines</div>
-      <div class="hero-stat-label">to integrate</div>
-    </div>
-    <div class="hero-divider"></div>
-    <div class="hero-stat">
-      <div class="hero-stat-num">5 LLMs</div>
-      <div class="hero-stat-label">supported</div>
-    </div>
-    <div class="hero-divider"></div>
-    <div class="hero-stat">
-      <div class="hero-stat-num">100%</div>
-      <div class="hero-stat-label">open source</div>
-    </div>
-    <div class="hero-divider"></div>
-    <div class="hero-stat">
-      <div class="hero-stat-num">Self-host</div>
-      <div class="hero-stat-label">docker compose</div>
-    </div>
+    <div class="stat"><div class="stat-val">3 lines</div><div class="stat-lbl">to integrate</div></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><div class="stat-val">5 providers</div><div class="stat-lbl">supported</div></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">open source</div></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><div class="stat-val">Self-host</div><div class="stat-lbl">docker compose</div></div>
   </div>
 </section>
 
-<!-- CODE DEMO -->
-<div class="demo-section">
+<div class="demo-wrap">
   <div class="demo-window">
-    <div class="demo-toolbar">
-      <div class="demo-dot" style="background:#ff5f57"></div>
-      <div class="demo-dot" style="background:#ffbd2e"></div>
-      <div class="demo-dot" style="background:#28c840"></div>
-      <div class="demo-tab-bar" id="tab-bar">
-        <div class="demo-tab active" data-tab="ts" onclick="switchTab('ts')">TypeScript</div>
-        <div class="demo-tab" data-tab="py" onclick="switchTab('py')">Python</div>
-        <div class="demo-tab" data-tab="ci" onclick="switchTab('ci')">CI Config</div>
+    <div class="demo-bar">
+      <div class="dot" style="background:#ff5f57"></div>
+      <div class="dot" style="background:#ffbd2e"></div>
+      <div class="dot" style="background:#28c840"></div>
+      <div class="tabs">
+        <div class="tab on" onclick="switchTab('ts',this)">TypeScript</div>
+        <div class="tab" onclick="switchTab('py',this)">Python</div>
+        <div class="tab" onclick="switchTab('ci',this)">CI Config</div>
       </div>
     </div>
     <div class="demo-body">
-      <div class="code-panel active" id="panel-ts">
-<pre><span class="c-keyword">import</span> <span class="c-op">{</span> <span class="c-var">PromptOps</span> <span class="c-op">}</span> <span class="c-keyword">from</span> <span class="c-string">'promptops'</span>
+      <div class="panel on" id="p-ts"><pre><span class="kw">import</span> <span class="op">{</span> <span class="vr">PromptOps</span> <span class="op">}</span> <span class="kw">from</span> <span class="str">'promptops'</span>
 
-<span class="c-keyword">const</span> <span class="c-var">client</span> <span class="c-op">=</span> <span class="c-keyword">new</span> <span class="c-fn">PromptOps</span><span class="c-op">({</span>
-  <span class="c-var">apiKey</span><span class="c-op">:</span> <span class="c-var">process</span><span class="c-op">.</span><span class="c-var">env</span><span class="c-op">.</span><span class="c-var">PROMPTOPS_KEY</span>
-<span class="c-op">})</span>
+<span class="kw">const</span> <span class="vr">client</span> <span class="op">=</span> <span class="kw">new</span> <span class="fn">PromptOps</span><span class="op">({</span> <span class="vr">apiKey</span><span class="op">:</span> <span class="vr">process</span><span class="op">.</span><span class="vr">env</span><span class="op">.</span><span class="vr">PROMPTOPS_KEY</span> <span class="op">})</span>
 
-<span class="c-comment">// Fetch the production-approved prompt (with fallback)</span>
-<span class="c-keyword">const</span> <span class="c-var">prompt</span> <span class="c-op">=</span> <span class="c-keyword">await</span> <span class="c-var">client</span><span class="c-op">.</span><span class="c-fn">get</span><span class="c-op">(</span><span class="c-string">'summarise-email'</span><span class="c-op">,</span> <span class="c-op">{</span>
-  <span class="c-var">env</span><span class="c-op">:</span> <span class="c-string">'production'</span>
-<span class="c-op">})</span>
+<span class="cm">// Fetch the production-approved prompt</span>
+<span class="kw">const</span> <span class="vr">prompt</span> <span class="op">=</span> <span class="kw">await</span> <span class="vr">client</span><span class="op">.</span><span class="fn">get</span><span class="op">(</span><span class="str">'summarise-email'</span><span class="op">,</span> <span class="op">{</span> <span class="vr">env</span><span class="op">:</span> <span class="str">'production'</span> <span class="op">})</span>
 
-<span class="c-comment">// Compile with your variables</span>
-<span class="c-keyword">const</span> <span class="c-var">messages</span> <span class="c-op">=</span> <span class="c-var">prompt</span><span class="c-op">.</span><span class="c-fn">compile</span><span class="c-op">({</span>
-  <span class="c-var">email</span><span class="c-op">:</span> <span class="c-var">emailBody</span><span class="c-op">,</span>
-  <span class="c-var">tone</span><span class="c-op">:</span> <span class="c-string">'professional'</span>
-<span class="c-op">})</span>
+<span class="cm">// Compile with your variables</span>
+<span class="kw">const</span> <span class="vr">messages</span> <span class="op">=</span> <span class="vr">prompt</span><span class="op">.</span><span class="fn">compile</span><span class="op">({</span> <span class="vr">email</span><span class="op">:</span> <span class="vr">emailBody</span><span class="op">,</span> <span class="vr">tone</span><span class="op">:</span> <span class="str">'professional'</span> <span class="op">})</span>
 
-<span class="c-comment">// Use with any provider — no lock-in</span>
-<span class="c-keyword">const</span> <span class="c-var">result</span> <span class="c-op">=</span> <span class="c-keyword">await</span> <span class="c-var">openai</span><span class="c-op">.</span><span class="c-var">chat</span><span class="c-op">.</span><span class="c-var">completions</span><span class="c-op">.</span><span class="c-fn">create</span><span class="c-op">({</span>
-  <span class="c-var">model</span><span class="c-op">:</span> <span class="c-string">'gpt-4o'</span><span class="c-op">,</span>
-  <span class="c-var">messages</span>
-<span class="c-op">})</span></pre>
-      </div>
-      <div class="code-panel" id="panel-py">
-<pre><span class="c-keyword">from</span> <span class="c-var">promptops</span> <span class="c-keyword">import</span> <span class="c-fn">PromptOps</span>
+<span class="cm">// Works with any provider — zero lock-in</span>
+<span class="kw">const</span> <span class="vr">result</span> <span class="op">=</span> <span class="kw">await</span> <span class="vr">openai</span><span class="op">.</span><span class="vr">chat</span><span class="op">.</span><span class="vr">completions</span><span class="op">.</span><span class="fn">create</span><span class="op">({</span> <span class="vr">model</span><span class="op">:</span> <span class="str">'gpt-4o'</span><span class="op">,</span> <span class="vr">messages</span> <span class="op">})</span></pre></div>
+      <div class="panel" id="p-py"><pre><span class="kw">from</span> <span class="vr">promptops</span> <span class="kw">import</span> <span class="fn">PromptOps</span>
 
-<span class="c-var">client</span> <span class="c-op">=</span> <span class="c-fn">PromptOps</span><span class="c-op">(</span><span class="c-var">api_key</span><span class="c-op">=</span><span class="c-var">os</span><span class="c-op">.</span><span class="c-var">environ</span><span class="c-op">[</span><span class="c-string">"PROMPTOPS_KEY"</span><span class="c-op">])</span>
+<span class="vr">client</span> <span class="op">=</span> <span class="fn">PromptOps</span><span class="op">(</span><span class="vr">api_key</span><span class="op">=</span><span class="vr">os</span><span class="op">.</span><span class="vr">environ</span><span class="op">[</span><span class="str">"PROMPTOPS_KEY"</span><span class="op">])</span>
 
-<span class="c-comment"># Fetch the approved prompt for production</span>
-<span class="c-var">prompt</span> <span class="c-op">=</span> <span class="c-var">client</span><span class="c-op">.</span><span class="c-fn">get</span><span class="c-op">(</span><span class="c-string">"summarise-email"</span><span class="c-op">,</span> <span class="c-var">env</span><span class="c-op">=</span><span class="c-string">"production"</span><span class="c-op">)</span>
+<span class="cm"># Fetch the approved prompt for production</span>
+<span class="vr">prompt</span> <span class="op">=</span> <span class="vr">client</span><span class="op">.</span><span class="fn">get</span><span class="op">(</span><span class="str">"summarise-email"</span><span class="op">,</span> <span class="vr">env</span><span class="op">=</span><span class="str">"production"</span><span class="op">)</span>
 
-<span class="c-comment"># Compile with your variables</span>
-<span class="c-var">messages</span> <span class="c-op">=</span> <span class="c-var">prompt</span><span class="c-op">.</span><span class="c-fn">compile</span><span class="c-op">(</span><span class="c-var">email</span><span class="c-op">=</span><span class="c-var">email_body</span><span class="c-op">,</span> <span class="c-var">tone</span><span class="c-op">=</span><span class="c-string">"professional"</span><span class="c-op">)</span>
+<span class="cm"># Compile with your variables</span>
+<span class="vr">messages</span> <span class="op">=</span> <span class="vr">prompt</span><span class="op">.</span><span class="fn">compile</span><span class="op">(</span><span class="vr">email</span><span class="op">=</span><span class="vr">email_body</span><span class="op">,</span> <span class="vr">tone</span><span class="op">=</span><span class="str">"professional"</span><span class="op">)</span>
 
-<span class="c-comment"># Works with Anthropic, OpenAI, Gemini, Ollama</span>
-<span class="c-var">result</span> <span class="c-op">=</span> <span class="c-var">anthropic</span><span class="c-op">.</span><span class="c-var">messages</span><span class="c-op">.</span><span class="c-fn">create</span><span class="c-op">(</span>
-  <span class="c-var">model</span><span class="c-op">=</span><span class="c-string">"claude-opus-4-5"</span><span class="c-op">,</span>
-  <span class="c-var">max_tokens</span><span class="c-op">=</span><span class="c-num">1024</span><span class="c-op">,</span>
-  <span class="c-var">messages</span><span class="c-op">=</span><span class="c-var">messages</span>
-<span class="c-op">)</span></pre>
-      </div>
-      <div class="code-panel" id="panel-ci">
-<pre><span class="c-comment"># .github/workflows/prompt-ci.yml</span>
-<span class="c-keyword">name</span><span class="c-op">:</span> <span class="c-string">Prompt Regression Tests</span>
+<span class="cm"># Works with Anthropic, OpenAI, Gemini, Ollama</span>
+<span class="vr">result</span> <span class="op">=</span> <span class="vr">anthropic</span><span class="op">.</span><span class="vr">messages</span><span class="op">.</span><span class="fn">create</span><span class="op">(</span><span class="vr">model</span><span class="op">=</span><span class="str">"claude-opus-4-5"</span><span class="op">,</span> <span class="vr">messages</span><span class="op">=</span><span class="vr">messages</span><span class="op">)</span></pre></div>
+      <div class="panel" id="p-ci"><pre><span class="cm"># .github/workflows/prompt-ci.yml</span>
+<span class="kw">name</span><span class="op">:</span> <span class="str">Prompt Regression Tests</span>
 
-<span class="c-keyword">on</span><span class="c-op">:</span>
-  <span class="c-var">pull_request</span><span class="c-op">:</span>
-    <span class="c-var">paths</span><span class="c-op">:</span>
-      <span class="c-op">-</span> <span class="c-string">'prompts/**'</span>
+<span class="kw">on</span><span class="op">:</span>
+  <span class="vr">pull_request</span><span class="op">:</span>
+    <span class="vr">paths</span><span class="op">:</span> <span class="op">[</span><span class="str">'prompts/**'</span><span class="op">]</span>
 
-<span class="c-keyword">jobs</span><span class="c-op">:</span>
-  <span class="c-var">test-prompts</span><span class="c-op">:</span>
-    <span class="c-var">runs-on</span><span class="c-op">:</span> <span class="c-string">ubuntu-latest</span>
-    <span class="c-var">steps</span><span class="c-op">:</span>
-      <span class="c-op">-</span> <span class="c-keyword">uses</span><span class="c-op">:</span> <span class="c-string">actions/checkout@v4</span>
-      <span class="c-op">-</span> <span class="c-keyword">uses</span><span class="c-op">:</span> <span class="c-string">promptops/action@v1</span>
-        <span class="c-keyword">with</span><span class="c-op">:</span>
-          <span class="c-var">api-key</span><span class="c-op">:</span> <span class="c-string">${{ secrets.PROMPTOPS_KEY }}</span>
-          <span class="c-var">suite</span><span class="c-op">:</span> <span class="c-string">./tests/prompts.json</span>
-          <span class="c-var">threshold</span><span class="c-op">:</span> <span class="c-num">0.85</span>    <span class="c-comment"># semantic similarity</span>
-          <span class="c-var">fail-on-drift</span><span class="c-op">:</span> <span class="c-keyword">true</span>  <span class="c-comment"># block the PR</span></pre>
-      </div>
+<span class="kw">jobs</span><span class="op">:</span>
+  <span class="vr">test</span><span class="op">:</span>
+    <span class="vr">runs-on</span><span class="op">:</span> <span class="str">ubuntu-latest</span>
+    <span class="vr">steps</span><span class="op">:</span>
+      <span class="op">-</span> <span class="kw">uses</span><span class="op">:</span> <span class="str">actions/checkout@v4</span>
+      <span class="op">-</span> <span class="kw">uses</span><span class="op">:</span> <span class="str">your-username/promptops@v1</span>
+        <span class="kw">with</span><span class="op">:</span>
+          <span class="vr">api-key</span><span class="op">:</span>      <span class="str">${{ secrets.PROMPTOPS_KEY }}</span>
+          <span class="vr">suite</span><span class="op">:</span>         <span class="str">./promptops.tests.json</span>
+          <span class="vr">threshold</span><span class="op">:</span>     <span class="nm">0.85</span>
+          <span class="vr">fail-on-drift</span><span class="op">:</span> <span class="kw">true</span></pre></div>
     </div>
   </div>
 </div>
 
-<!-- FEATURES -->
-<section class="features" id="features">
-  <div class="section-eyebrow">// Why PromptOps</div>
-  <h2 class="section-title">Prompts deserve<br/>engineering discipline.</h2>
-  <p class="section-sub">Your code is versioned, reviewed, and tested. Your prompts — the most critical part of your AI product — aren't. Until now.</p>
-
+<section class="features-section" id="features">
+  <div class="section-lbl">Why PromptOps</div>
+  <h2 class="section-h">Prompts deserve<br/><span>engineering discipline.</span></h2>
+  <p class="section-sub">Your code is versioned, reviewed, and tested before every deploy. Your prompts — the most critical part of your AI product — are not. Until now.</p>
   <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(124,106,247,0.12);color:#a78bfa">🔀</div>
-      <div class="feature-title">Git-style version control</div>
-      <div class="feature-desc">Every prompt change tracked with semantic diffs. See not just what changed, but how the meaning shifted. Branch, merge, and rollback with confidence.</div>
+    <div class="feat">
+      <div class="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 01-9 9"/></svg></div>
+      <div class="feat-title">Git-style version control</div>
+      <div class="feat-desc">Every prompt change tracked with semantic diffs. See not just what changed, but how the meaning shifted. Branch, rollback, and audit with confidence.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(74,222,128,0.1);color:#4ade80">⚖️</div>
-      <div class="feature-title">A/B testing in production</div>
-      <div class="feature-desc">Split traffic between two prompt versions and measure real performance. Auto-promote the winner and retire the loser — all without a deploy.</div>
+    <div class="feat">
+      <div class="feat-icon" style="background:rgba(16,185,129,0.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+      <div class="feat-title">A/B testing in production</div>
+      <div class="feat-desc">Split real traffic between prompt versions. Measure performance on actual users. Auto-promote the winner — no redeploy needed.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(96,165,250,0.1);color:#60a5fa">👥</div>
-      <div class="feature-title">PR-style review workflow</div>
-      <div class="feature-desc">PMs write prompts. Engineers review them. Designers see what's live. Built-in approval gates with roles: viewer, editor, reviewer, approver.</div>
+    <div class="feat">
+      <div class="feat-icon" style="background:rgba(245,158,11,0.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+      <div class="feat-title">PR-style review workflow</div>
+      <div class="feat-desc">Product managers write prompts. Engineers review them. Approval gates block untested prompts from reaching production.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24">🧪</div>
-      <div class="feature-title">Prompt CI — block bad changes</div>
-      <div class="feature-desc">Define a golden test suite. Run it in CI on every PR. Block deployments when prompt changes break expected outputs beyond your threshold.</div>
+    <div class="feat">
+      <div class="feat-icon" style="background:rgba(239,68,68,0.07)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="feat-title">Prompt CI — block drift</div>
+      <div class="feat-desc">Define a golden test suite. Run it on every pull request. Block merges when prompt changes break expected outputs beyond your threshold.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(248,113,113,0.1);color:#f87171">🔌</div>
-      <div class="feature-title">Fully provider-agnostic</div>
-      <div class="feature-desc">One SDK. Works with OpenAI, Anthropic, Gemini, Mistral, and Ollama. Switch providers without changing a line of your application code.</div>
+    <div class="feat">
+      <div class="feat-icon" style="background:rgba(139,92,246,0.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/><path d="M5 9v3a2 2 0 002 2h10a2 2 0 002-2V9"/><line x1="12" y1="14" x2="12" y2="11"/></svg></div>
+      <div class="feat-title">Fully provider-agnostic</div>
+      <div class="feat-desc">One SDK. Works with OpenAI, Anthropic, Gemini, Mistral, and Ollama. Switch providers without changing your application code.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:rgba(196,181,253,0.1);color:#c4b5fd">🏠</div>
-      <div class="feature-title">Self-host in 60 seconds</div>
-      <div class="feature-desc">One Docker Compose command. Your prompts live on your infra. Zero data leaves your environment. Full audit log included.</div>
+    <div class="feat">
+      <div class="feat-icon" style="background:rgba(14,165,233,0.07)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <div class="feat-title">Self-host in 60 seconds</div>
+      <div class="feat-desc">One Docker Compose command. Your prompts live on your infrastructure. Zero data leaves your environment. Full audit log built in.</div>
     </div>
   </div>
 </section>
 
-<!-- COMPARE -->
-<section class="compare" id="compare">
-  <div style="text-align:center; margin-bottom:48px;">
-    <div class="section-eyebrow">// Comparison</div>
-    <h2 class="section-title">How we compare</h2>
-  </div>
+<section class="compare-section" id="compare">
+  <div class="section-lbl">Comparison</div>
+  <h2 class="section-h">How we <span>compare.</span></h2>
   <table class="compare-table">
     <thead>
       <tr>
-        <th>Feature</th>
-        <th>LangSmith</th>
-        <th>Langfuse</th>
-        <th class="highlight">PromptOps ✦</th>
+        <th>Feature</th><th>LangSmith</th><th>Langfuse</th><th class="hl">PromptOps</th>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td>Prompt version history</td>
-        <td><span class="partial">Partial</span></td>
-        <td><span class="check">✓</span></td>
-        <td><span class="check">✓</span></td>
-      </tr>
-      <tr>
-        <td>Framework agnostic SDK</td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="partial">Partial</span></td>
-        <td><span class="check">✓</span></td>
-      </tr>
-      <tr>
-        <td>PR-style review workflow</td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="check">✓</span></td>
-      </tr>
-      <tr>
-        <td>A/B testing in production</td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="check">✓</span></td>
-      </tr>
-      <tr>
-        <td>CI/CD GitHub Action</td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="check">✓</span></td>
-      </tr>
-      <tr>
-        <td>Non-engineer UI (PM/Design)</td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="cross">✗</span></td>
-        <td><span class="check">✓</span></td>
-      </tr>
-      <tr>
-        <td>Self-hostable open source</td>
-        <td><span class="partial">Partial</span></td>
-        <td><span class="check">✓</span></td>
-        <td><span class="check">✓</span></td>
-      </tr>
+      <tr><td>Prompt version history</td><td><span class="partial">Partial</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td></tr>
+      <tr><td>Framework agnostic SDK</td><td><span class="no">✗</span></td><td><span class="partial">Partial</span></td><td><span class="yes">✓</span></td></tr>
+      <tr><td>PR-style review workflow</td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="yes">✓</span></td></tr>
+      <tr><td>A/B testing in production</td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="yes">✓</span></td></tr>
+      <tr><td>CI/CD GitHub Action</td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="yes">✓</span></td></tr>
+      <tr><td>Non-engineer friendly UI</td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="yes">✓</span></td></tr>
+      <tr><td>Open source + self-hostable</td><td><span class="partial">Partial</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td></tr>
     </tbody>
   </table>
 </section>
 
-<!-- INSTALL -->
-<section class="install" id="install">
-  <div class="section-eyebrow">// Quickstart</div>
-  <h2 class="section-title">Up in 60 seconds.</h2>
-  <p class="section-sub" style="margin:0 auto 0">No account required to self-host. No credit card. No vendor lock-in.</p>
-
-  <div class="install-steps">
-    <div class="install-step">
-      <div class="install-step-num">1</div>
-      <div class="install-step-content">
-        <div class="install-step-title">Clone and start the server</div>
-        <code class="install-step-code">git clone https://github.com/your-org/promptops && cd promptops && docker compose up</code>
+<section class="install-section" id="install">
+  <div class="section-lbl">Quickstart</div>
+  <h2 class="section-h">Up in <span>60 seconds.</span></h2>
+  <p class="section-sub" style="margin:0 auto">No credit card. No account required to self-host. No vendor lock-in.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div>
+        <div class="step-title">Clone and start the server</div>
+        <code class="step-code">git clone https://github.com/your-username/promptops && docker compose up</code>
       </div>
     </div>
-    <div class="install-step">
-      <div class="install-step-num">2</div>
-      <div class="install-step-content">
-        <div class="install-step-title">Install the SDK</div>
-        <code class="install-step-code">npm install promptops &nbsp;·&nbsp; pip install promptops</code>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div>
+        <div class="step-title">Install the SDK</div>
+        <code class="step-code">npm install promptops &nbsp; · &nbsp; pip install promptops</code>
       </div>
     </div>
-    <div class="install-step">
-      <div class="install-step-num">3</div>
-      <div class="install-step-content">
-        <div class="install-step-title">Create your first prompt in the dashboard and start shipping with confidence</div>
-        <code class="install-step-code">const prompt = await client.get('your-prompt-name', { env: 'production' })</code>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div>
+        <div class="step-title">Fetch your first prompt and ship with confidence</div>
+        <code class="step-code">const prompt = await client.get('my-prompt', { env: 'production' })</code>
       </div>
     </div>
   </div>
-
-  <a href="https://github.com" class="btn-hero" style="margin:0 auto; display:inline-flex">
-    Read the full docs →
+  <a href="https://github.com" class="btn-hero" style="display:inline-flex;margin:0 auto">
+    Read the full docs
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
   </a>
 </section>
 
-<!-- FOOTER -->
 <footer>
   <div class="footer-logo">PromptOps</div>
   <ul class="footer-links">
@@ -943,11 +668,131 @@
 </footer>
 
 <script>
-function switchTab(tab) {
-  document.querySelectorAll('.demo-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')})
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on')})
+  el.classList.add('on')
+  document.getElementById('p-'+id).classList.add('on')
 }
+
+// ── Animated background ──────────────────────────────────────────────────
+(function(){
+  var canvas = document.getElementById('bg-canvas')
+  var ctx = canvas.getContext('2d')
+  var W, H, raf
+
+  // Floating orbs
+  var orbs = []
+  // Connected particles
+  var pts = []
+
+  function init(){
+    W = canvas.width = window.innerWidth
+    H = canvas.height = window.innerHeight
+
+    orbs = [
+      { x: W*0.15, y: H*0.25, r: W*0.28, vx:0.12, vy:0.08, color:'rgba(99,102,241,' },
+      { x: W*0.82, y: H*0.60, r: W*0.22, vx:-0.10, vy:-0.06, color:'rgba(139,92,246,' },
+      { x: W*0.50, y: H*0.80, r: W*0.18, vx:0.07, vy:-0.09, color:'rgba(79,70,229,' },
+    ]
+
+    pts = Array.from({length:70}, function(){
+      return {
+        x: Math.random()*W,
+        y: Math.random()*H,
+        vx: (Math.random()-0.5)*0.18,
+        vy: (Math.random()-0.5)*0.18,
+        r: Math.random()*1.4+0.3,
+        o: Math.random()*0.25+0.05,
+        pulse: Math.random()*Math.PI*2
+      }
+    })
+  }
+
+  var t = 0
+  function draw(){
+    t += 0.004
+    ctx.clearRect(0,0,W,H)
+
+    // Deep background
+    ctx.fillStyle = '#030712'
+    ctx.fillRect(0,0,W,H)
+
+    // Animated glowing orbs
+    orbs.forEach(function(o){
+      o.x += o.vx; o.y += o.vy
+      if(o.x < -o.r) o.x = W+o.r
+      if(o.x > W+o.r) o.x = -o.r
+      if(o.y < -o.r) o.y = H+o.r
+      if(o.y > H+o.r) o.y = -o.r
+
+      var alpha = 0.055 + Math.sin(t*0.8)*0.02
+      var g = ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r)
+      g.addColorStop(0, o.color+alpha+')')
+      g.addColorStop(0.4, o.color+(alpha*0.4)+')')
+      g.addColorStop(1,'transparent')
+      ctx.fillStyle = g
+      ctx.fillRect(0,0,W,H)
+    })
+
+    // Subtle grid
+    ctx.strokeStyle = 'rgba(99,102,241,0.028)'
+    ctx.lineWidth = 1
+    var spacing = 90
+    for(var x=0;x<W;x+=spacing){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(var y=0;y<H;y+=spacing){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+
+    // Particles with connections
+    pts.forEach(function(p,i){
+      p.x+=p.vx; p.y+=p.vy
+      p.pulse+=0.015
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0
+      if(p.y<0)p.y=H; if(p.y>H)p.y=0
+
+      var pulse = 0.5+Math.sin(p.pulse)*0.5
+      var r = p.r*(0.8+pulse*0.4)
+      var o = p.o*(0.6+pulse*0.4)
+
+      // Draw connections to nearby particles
+      for(var j=i+1;j<pts.length;j++){
+        var dx=pts[j].x-p.x, dy=pts[j].y-p.y
+        var dist=Math.sqrt(dx*dx+dy*dy)
+        if(dist<120){
+          var lineAlpha = (1-dist/120)*0.06
+          ctx.beginPath()
+          ctx.moveTo(p.x,p.y)
+          ctx.lineTo(pts[j].x,pts[j].y)
+          ctx.strokeStyle='rgba(139,92,246,'+lineAlpha+')'
+          ctx.lineWidth=0.5
+          ctx.stroke()
+        }
+      }
+
+      ctx.beginPath()
+      ctx.arc(p.x,p.y,r,0,Math.PI*2)
+      ctx.fillStyle='rgba(139,92,246,'+o+')'
+      ctx.fill()
+    })
+
+    // Horizontal aurora lines
+    for(var i=0;i<3;i++){
+      var y = H*(0.25+i*0.25) + Math.sin(t*0.6+i*2.1)*H*0.04
+      var lineG = ctx.createLinearGradient(0,y,W,y)
+      lineG.addColorStop(0,'transparent')
+      lineG.addColorStop(0.2,'rgba(99,102,241,0.025)')
+      lineG.addColorStop(0.5,'rgba(139,92,246,0.04)')
+      lineG.addColorStop(0.8,'rgba(99,102,241,0.025)')
+      lineG.addColorStop(1,'transparent')
+      ctx.fillStyle=lineG
+      ctx.fillRect(0,y-1,W,2)
+    }
+
+    raf = requestAnimationFrame(draw)
+  }
+
+  init(); draw()
+  window.addEventListener('resize',function(){cancelAnimationFrame(raf);init();draw()})
+})()
 </script>
 </body>
 </html>
