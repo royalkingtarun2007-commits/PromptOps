@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { GitBranch, CheckCircle, Clock, XCircle, Plus, ArrowLeft } from 'lucide-react'
 import { api, type PromptVersion } from '@/lib/api'
 
 const statusConfig = {
-  draft:     { label: 'Draft',     color: '#71717a', bg: 'rgba(113,113,122,0.1)',  icon: Clock },
-  in_review: { label: 'In Review', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   icon: Clock },
-  approved:  { label: 'Approved',  color: '#4ade80', bg: 'rgba(74,222,128,0.1)',   icon: CheckCircle },
-  rejected:  { label: 'Rejected',  color: '#f87171', bg: 'rgba(248,113,113,0.1)',  icon: XCircle },
-  archived:  { label: 'Archived',  color: '#52525b', bg: 'rgba(82,82,91,0.1)',     icon: Clock },
+  draft:     { label: 'Draft',     color: '#4b5563', bg: 'rgba(75,85,99,0.1)' },
+  in_review: { label: 'In Review', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  approved:  { label: 'Approved',  color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+  rejected:  { label: 'Rejected',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+  archived:  { label: 'Archived',  color: '#374151', bg: 'rgba(55,65,81,0.1)' },
 }
 
 export default function PromptDetailPage() {
@@ -27,9 +26,8 @@ export default function PromptDetailPage() {
       const data = await api.get<{ versions: PromptVersion[] }>(`/v1/prompts/${slug}/versions`)
       setVersions(data.versions ?? [])
       if (data.versions?.length) setSelected(data.versions[0] ?? null)
-    } catch {
-      setVersions([])
-    } finally { setLoading(false) }
+    } catch { setVersions([]) }
+    finally { setLoading(false) }
   }
 
   async function updateStatus(versionId: string, status: string) {
@@ -37,184 +35,131 @@ export default function PromptDetailPage() {
     try {
       await api.patch(`/v1/prompts/${slug}/versions/${versionId}/status`, { status })
       fetchVersions()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update status')
-    } finally { setActionLoading(false) }
+    } catch (err) { alert(err instanceof Error ? err.message : 'Failed') }
+    finally { setActionLoading(false) }
   }
 
-  async function promote(versionId: string, environment: string) {
+  async function promote(versionId: string, env: string) {
     setActionLoading(true)
     try {
-      await api.post(`/v1/prompts/${slug}/promote`, { version_id: versionId, environment })
-      alert(`Promoted to ${environment} successfully!`)
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to promote')
-    } finally { setActionLoading(false) }
+      await api.post(`/v1/prompts/${slug}/promote`, { version_id: versionId, environment: env })
+      alert(`Promoted to ${env}`)
+    } catch (err) { alert(err instanceof Error ? err.message : 'Failed') }
+    finally { setActionLoading(false) }
   }
 
   return (
-    <div style={{ padding: '40px 48px', maxWidth: 1100 }}>
-      {/* Back */}
-      <a href="/prompts" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#71717a', fontSize: 13, textDecoration: 'none', marginBottom: 24 }}>
-        <ArrowLeft size={14} /> Back to prompts
+    <div style={page}>
+      <a href="/prompts" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4b5563', fontSize: 14, textDecoration: 'none', marginBottom: 28, fontFamily: 'EB Garamond, serif' }}>
+        <BackIcon /> Back to prompts
       </a>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
-        <div>
-          <p style={{ fontSize: 12, color: '#7c6af7', fontFamily: 'DM Mono, monospace', marginBottom: 6 }}>{slug}</p>
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 26, fontWeight: 700, color: '#f4f4f5', letterSpacing: '-0.03em' }}>
-            {slug}
-          </h1>
-        </div>
+      <div style={{ marginBottom: 36 }}>
+        <div style={{ fontSize: 12, color: '#374151', fontFamily: 'JetBrains Mono, monospace', marginBottom: 6, letterSpacing: '0.06em' }}>{slug}</div>
+        <h1 style={heading}>{slug}</h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24 }}>
 
-        {/* Version List */}
+        {/* Version list */}
         <div>
-          <div style={{ fontSize: 11, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-            Versions
-          </div>
-          <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={sectionLabel}>Versions</div>
+          <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: 12, overflow: 'hidden', background: '#0c1122' }}>
             {loading ? (
-              <div style={{ padding: 24, textAlign: 'center', color: '#52525b', fontSize: 13 }}>Loading...</div>
+              <div style={empty}>Loading...</div>
             ) : versions.length === 0 ? (
-              <div style={{ padding: 24, textAlign: 'center', color: '#52525b', fontSize: 13 }}>No versions yet.</div>
+              <div style={empty}>No versions yet.</div>
             ) : versions.map((v, i) => {
               const cfg = statusConfig[v.status] ?? statusConfig.draft
-              const Icon = cfg.icon
-              const isSelected = selected?.id === v.id
+              const active = selected?.id === v.id
               return (
-                <div
-                  key={v.id}
-                  onClick={() => setSelected(v)}
-                  style={{
-                    padding: '12px 14px',
-                    borderBottom: i < versions.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    background: isSelected ? 'rgba(124,106,247,0.08)' : 'transparent',
-                    cursor: 'pointer',
-                    borderLeft: isSelected ? '2px solid #7c6af7' : '2px solid transparent',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <GitBranch size={13} color={isSelected ? '#7c6af7' : '#52525b'} />
-                      <span style={{ fontSize: 13, fontFamily: 'DM Mono, monospace', color: isSelected ? '#a78bfa' : '#f4f4f5' }}>
-                        {v.version}
-                      </span>
-                    </div>
-                    <span style={{ padding: '2px 6px', background: cfg.bg, color: cfg.color, borderRadius: 4, fontSize: 10 }}>
-                      {cfg.label}
-                    </span>
+                <div key={v.id} onClick={() => setSelected(v)} style={{
+                  padding: '13px 16px',
+                  borderBottom: i < versions.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                  background: active ? 'rgba(99,102,241,0.07)' : 'transparent',
+                  borderLeft: `2px solid ${active ? '#6366f1' : 'transparent'}`,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontFamily: 'JetBrains Mono, monospace', color: active ? '#a5b4fc' : '#f9fafb' }}>{v.version}</span>
+                    <span style={{ padding: '2px 7px', background: cfg.bg, color: cfg.color, borderRadius: 5, fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}>{cfg.label}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#52525b', marginTop: 4 }}>
-                    {new Date(v.created_at).toLocaleDateString()}
-                  </div>
+                  <div style={{ fontSize: 11, color: '#374151', fontFamily: 'JetBrains Mono, monospace' }}>{new Date(v.created_at).toLocaleDateString()}</div>
                 </div>
               )
             })}
           </div>
         </div>
 
-        {/* Version Detail */}
+        {/* Version detail */}
         {selected && (
-          <div>
-            <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden' }}>
-              {/* Version header */}
-              <div style={{
-                padding: '16px 20px',
-                background: '#0f0f11',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 14, color: '#a78bfa' }}>{selected.version}</span>
-                  <span style={{
-                    padding: '3px 8px',
-                    background: (statusConfig[selected.status] ?? statusConfig.draft).bg,
-                    color: (statusConfig[selected.status] ?? statusConfig.draft).color,
-                    borderRadius: 6, fontSize: 11,
-                  }}>
-                    {(statusConfig[selected.status] ?? statusConfig.draft).label}
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {selected.status === 'draft' && (
-                    <button
-                      onClick={() => updateStatus(selected.id, 'in_review')}
-                      disabled={actionLoading}
-                      style={{ padding: '7px 14px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, color: '#fbbf24', fontSize: 13, cursor: 'pointer' }}
-                    >
-                      Submit for Review
-                    </button>
-                  )}
-                  {selected.status === 'in_review' && (
-                    <>
-                      <button
-                        onClick={() => updateStatus(selected.id, 'rejected')}
-                        disabled={actionLoading}
-                        style={{ padding: '7px 14px', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, color: '#f87171', fontSize: 13, cursor: 'pointer' }}
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => updateStatus(selected.id, 'approved')}
-                        disabled={actionLoading}
-                        style={{ padding: '7px 14px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 8, color: '#4ade80', fontSize: 13, cursor: 'pointer' }}
-                      >
-                        Approve
-                      </button>
-                    </>
-                  )}
-                  {selected.status === 'approved' && (
-                    <button
-                      onClick={() => promote(selected.id, 'production')}
-                      disabled={actionLoading}
-                      style={{ padding: '7px 14px', background: '#7c6af7', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
-                    >
-                      Promote to Production
-                    </button>
-                  )}
-                </div>
+          <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: 14, overflow: 'hidden', background: '#0c1122' }}>
+            {/* Header */}
+            <div style={{ padding: '16px 22px', background: '#0a0f1e', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, color: '#a5b4fc' }}>{selected.version}</span>
+                <span style={{
+                  padding: '3px 9px',
+                  background: (statusConfig[selected.status] ?? statusConfig.draft).bg,
+                  color: (statusConfig[selected.status] ?? statusConfig.draft).color,
+                  borderRadius: 6, fontSize: 11, fontFamily: 'JetBrains Mono, monospace',
+                }}>
+                  {(statusConfig[selected.status] ?? statusConfig.draft).label}
+                </span>
               </div>
 
-              {/* Meta */}
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 32 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {selected.status === 'draft' && (
+                  <button onClick={() => updateStatus(selected.id, 'in_review')} disabled={actionLoading} style={btnAmber}>
+                    Submit for Review
+                  </button>
+                )}
+                {selected.status === 'in_review' && (
+                  <>
+                    <button onClick={() => updateStatus(selected.id, 'rejected')} disabled={actionLoading} style={btnRed}>Reject</button>
+                    <button onClick={() => updateStatus(selected.id, 'approved')} disabled={actionLoading} style={btnGreen}>Approve</button>
+                  </>
+                )}
+                {selected.status === 'approved' && (
+                  <button onClick={() => promote(selected.id, 'production')} disabled={actionLoading} style={btnPrimary}>
+                    Promote to Production
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Meta */}
+            {(selected.approved_by || selected.variables.length > 0) && (
+              <div style={{ padding: '16px 22px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', gap: 32 }}>
                 {selected.approved_by && (
                   <div>
-                    <div style={{ fontSize: 11, color: '#52525b', marginBottom: 3 }}>Approved by</div>
-                    <div style={{ fontSize: 13, color: '#a1a1aa' }}>{selected.approved_by}</div>
+                    <div style={metaLabel}>Approved by</div>
+                    <div style={metaValue}>{selected.approved_by}</div>
                   </div>
                 )}
                 {selected.variables.length > 0 && (
                   <div>
-                    <div style={{ fontSize: 11, color: '#52525b', marginBottom: 3 }}>Variables</div>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={metaLabel}>Variables</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
                       {selected.variables.map(v => (
-                        <span key={v} style={{ padding: '2px 7px', background: 'rgba(96,165,250,0.1)', color: '#60a5fa', borderRadius: 5, fontSize: 12, fontFamily: 'DM Mono, monospace' }}>
-                          {`{{${v}}}`}
-                        </span>
+                        <span key={v} style={{ padding: '2px 8px', background: 'rgba(96,165,250,0.08)', color: '#60a5fa', borderRadius: 5, fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{`{{${v}}}`}</span>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Review notes */}
-              {selected.review_notes && (
-                <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(251,191,36,0.04)' }}>
-                  <div style={{ fontSize: 11, color: '#52525b', marginBottom: 4 }}>Review notes</div>
-                  <div style={{ fontSize: 13, color: '#a1a1aa', lineHeight: 1.6 }}>{selected.review_notes}</div>
-                </div>
-              )}
-
-              {/* Empty state for no messages */}
-              <div style={{ padding: 32, textAlign: 'center', color: '#52525b', fontSize: 14 }}>
-                <GitBranch size={24} style={{ margin: '0 auto 10px', display: 'block', color: '#27272a' }} />
-                Version {selected.version} — edit messages in your code editor or via the API.
+            {/* Review notes */}
+            {selected.review_notes && (
+              <div style={{ padding: '14px 22px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(245,158,11,0.03)' }}>
+                <div style={metaLabel}>Review notes</div>
+                <div style={{ fontSize: 14, color: '#9ca3af', marginTop: 4, lineHeight: 1.6, fontFamily: 'EB Garamond, serif' }}>{selected.review_notes}</div>
               </div>
+            )}
+
+            <div style={{ padding: '40px 22px', textAlign: 'center', color: '#374151', fontSize: 15, fontFamily: 'EB Garamond, serif' }}>
+              Version {selected.version} — edit messages via the API or CLI.
             </div>
           </div>
         )}
@@ -222,3 +167,16 @@ export default function PromptDetailPage() {
     </div>
   )
 }
+
+const page: React.CSSProperties = { padding: '44px 52px', maxWidth: 1100, fontFamily: 'EB Garamond, Georgia, serif' }
+const heading: React.CSSProperties = { fontFamily: 'Cormorant Garamond, serif', fontSize: 30, fontWeight: 600, fontStyle: 'italic', color: '#f9fafb', letterSpacing: '-0.03em' }
+const sectionLabel: React.CSSProperties = { fontSize: 10, color: '#374151', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 10 }
+const empty: React.CSSProperties = { padding: '32px', textAlign: 'center', color: '#374151', fontSize: 14 }
+const metaLabel: React.CSSProperties = { fontSize: 11, color: '#374151', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 3 }
+const metaValue: React.CSSProperties = { fontSize: 14, color: '#9ca3af', fontFamily: 'EB Garamond, serif' }
+const btnBase = { padding: '7px 14px', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'EB Garamond, serif' }
+const btnPrimary: React.CSSProperties = { ...btnBase, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: 600 }
+const btnAmber: React.CSSProperties = { ...btnBase, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b' }
+const btnGreen: React.CSSProperties = { ...btnBase, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981' }
+const btnRed: React.CSSProperties = { ...btnBase, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }
+function BackIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> }

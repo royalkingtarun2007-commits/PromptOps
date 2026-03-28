@@ -1,17 +1,19 @@
+// apps/api/src/db/pool.ts
 import { Pool } from 'pg'
 
-// ── Connection Pool ────────────────────────────
-// Reuses connections across requests for performance.
-// Config is read from environment variables.
-
 export const db = new Pool({
-  connectionString: process.env['DATABASE_URL'],
-  max: 20,                // max connections in pool
+  host: process.env.NODE_ENV === 'production' || process.env.PGHOST === 'postgres' 
+    ? 'postgres' 
+    : 'localhost',
+  port: parseInt(process.env.PGPORT || '5432'),
+  database: process.env.PGDATABASE || 'promptops',
+  user: process.env.PGUSER || 'promptops',
+  password: process.env.PGPASSWORD || 'promptops',
+  max: 20,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
 })
 
-// Verify connection on startup
 export async function connectDB(): Promise<void> {
   const client = await db.connect()
   try {
@@ -22,7 +24,6 @@ export async function connectDB(): Promise<void> {
   }
 }
 
-// Graceful shutdown
 export async function closeDB(): Promise<void> {
   await db.end()
   console.log('Database pool closed')

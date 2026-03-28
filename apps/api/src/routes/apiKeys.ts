@@ -1,84 +1,65 @@
+// apps/api/src/routes/apiKeys.ts
 import { Router } from 'express'
 import { z } from 'zod'
 import { createHash, randomBytes } from 'crypto'
 import { db } from '../db/pool'
-import { requireApiKey } from '../middleware/auth'
 
 export const apiKeysRouter = Router()
-apiKeysRouter.use(requireApiKey)
 
-// ── POST /v1/api-keys ─────────────────────────
-// Generate a new API key for the workspace
-
+// POST /v1/api-keys - Create first key (no auth needed initially)
 apiKeysRouter.post('/', async (req, res, next) => {
   try {
-    const { workspaceId } = req.auth!
-    const { name, expiresInDays } = z.object({
-      name: z.string().min(1).max(100),
-      expiresInDays: z.number().int().positive().optional(),
-    }).parse(req.body)
+    // Get first workspace or create default
+    let workspaceId = '00000000-0000-0000-0000-000000000000'
 
-    // Generate a secure random key with a readable prefix
+    const wsResult = await db.query('SELECT id FROM workspaces LIMIT 1')
+    if (wsResult.rows.length > 0) {
+      workspaceId = wsResult.rows[0].id
+    } else {
+      // Create default workspace if none exists
+      const newWs = await db.query(`
+        INSERT INTO workspaces (name, slug) 
+        VALUES ('Default Team', 'default') 
+        RETURNING id
+      `)
+      workspaceId = newWs.rows[0].id
+    }
+
+    const { name } = z.object({
+      name: z.string().min(1).max(100),
+    }).parse(req.body || { name: 'Default Key' })
+
     const rawKey = `po_live_${randomBytes(32).toString('hex')}`
     const keyPrefix = rawKey.slice(0, 16)
     const keyHash = createHash('sha256').update(rawKey).digest('hex')
 
-    const expiresAt = expiresInDays
-      ? new Date(Date.now() + expiresInDays * 86_400_000)
-      : null
-
     const result = await db.query(
       `INSERT INTO api_keys (workspace_id, name, key_hash, key_prefix, expires_at)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, name, key_prefix, expires_at, created_at`,
-      [workspaceId, name, keyHash, keyPrefix, expiresAt]
+       VALUES ($1, $2, $3, $4, NULL)
+       RETURNING id, name, key_prefix, created_at`,
+      [workspaceId, name, keyHash, keyPrefix]
     )
 
-    // Return the raw key ONCE — we never store it
     res.status(201).json({
       ...result.rows[0],
       key: rawKey,
       warning: 'Save this key now. It will not be shown again.',
     })
   } catch (err) {
+    console.error('API Key error:', err)
     next(err)
   }
 })
 
-// ── GET /v1/api-keys ──────────────────────────
-// List all API keys (prefixes only, never full keys)
-
+// GET /v1/api-keys
 apiKeysRouter.get('/', async (req, res, next) => {
   try {
-    const { workspaceId } = req.auth!
-
-    const result = await db.query(
-      `SELECT id, name, key_prefix, last_used_at, expires_at, created_at
-       FROM api_keys
-       WHERE workspace_id = $1
-       ORDER BY created_at DESC`,
-      [workspaceId]
-    )
-
+    const result = await db.query(`
+      SELECT id, name, key_prefix, last_used_at, expires_at, created_at
+      FROM api_keys 
+      ORDER BY created_at DESC
+    `)
     res.json({ apiKeys: result.rows })
-  } catch (err) {
-    next(err)
-  }
-})
-
-// ── DELETE /v1/api-keys/:id ───────────────────
-// Revoke an API key immediately
-
-apiKeysRouter.delete('/:id', async (req, res, next) => {
-  try {
-    const { workspaceId } = req.auth!
-
-    await db.query(
-      'DELETE FROM api_keys WHERE id = $1 AND workspace_id = $2',
-      [req.params['id'], workspaceId]
-    )
-
-    res.json({ message: 'API key revoked.' })
   } catch (err) {
     next(err)
   }

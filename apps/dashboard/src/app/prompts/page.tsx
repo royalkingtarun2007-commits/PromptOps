@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Search, FileText, GitBranch, Tag } from 'lucide-react'
 import { api, type Prompt } from '@/lib/api'
 
 export default function PromptsPage() {
@@ -9,15 +8,11 @@ export default function PromptsPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
-
-  // New prompt form state
   const [form, setForm] = useState({ slug: '', name: '', description: '', tags: '' })
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchPrompts()
-  }, [search])
+  useEffect(() => { fetchPrompts() }, [search])
 
   async function fetchPrompts() {
     setLoading(true)
@@ -25,11 +20,8 @@ export default function PromptsPage() {
       const q = search ? `?search=${encodeURIComponent(search)}` : ''
       const data = await api.get<{ prompts: Prompt[] }>(`/v1/prompts${q}`)
       setPrompts(data.prompts ?? [])
-    } catch {
-      setPrompts([])
-    } finally {
-      setLoading(false)
-    }
+    } catch { setPrompts([]) }
+    finally { setLoading(false) }
   }
 
   async function createPrompt() {
@@ -48,166 +40,118 @@ export default function PromptsPage() {
       setForm({ slug: '', name: '', description: '', tags: '' })
       fetchPrompts()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create prompt')
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  const statusColor: Record<string, string> = {
-    draft: '#71717a', in_review: '#fbbf24', approved: '#4ade80', rejected: '#f87171', archived: '#52525b',
+      setError(err instanceof Error ? err.message : 'Failed to create')
+    } finally { setCreating(false) }
   }
 
   return (
-    <div style={{ padding: '40px 48px', maxWidth: 1100 }}>
+    <div style={page}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40 }}>
         <div>
-          <p style={{ fontSize: 12, color: '#7c6af7', fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>// Prompts</p>
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 28, fontWeight: 700, color: '#f4f4f5', letterSpacing: '-0.03em' }}>
-            Prompt Library
-          </h1>
-          <p style={{ color: '#71717a', fontSize: 15, marginTop: 6 }}>Version, review, and deploy your prompts.</p>
+          <h1 style={heading}>Prompt Library</h1>
+          <p style={sub}>Version, review, and deploy your prompts.</p>
         </div>
-        <button onClick={() => setShowCreate(true)} style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 20px',
-          background: '#7c6af7', border: 'none', borderRadius: 10,
-          color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer',
-        }}>
-          <Plus size={16} />
-          New Prompt
+        <button onClick={() => setShowCreate(true)} style={btnPrimary}>
+          <PlusIcon /> New Prompt
         </button>
       </div>
 
       {/* Search */}
       <div style={{ position: 'relative', marginBottom: 24 }}>
-        <Search size={15} color="#52525b" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
+          <SearchIcon />
+        </div>
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search prompts..."
-          style={{
-            width: '100%', padding: '10px 14px 10px 38px',
-            background: '#111113', border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 10, color: '#f4f4f5', fontSize: 14, outline: 'none',
-          }}
+          style={{ ...input, paddingLeft: 40 }}
         />
       </div>
 
       {/* Table */}
-      <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden' }}>
-        {/* Table header */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 140px 120px 100px 120px',
-          padding: '10px 20px',
-          background: '#0f0f11',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          fontSize: 11, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.07em',
-        }}>
-          <span>Prompt</span>
+      <div style={table}>
+        <div style={tableHead}>
+          <span style={{ flex: 2 }}>Prompt</span>
           <span>Tags</span>
           <span>Versions</span>
-          <span>Status</span>
           <span>Updated</span>
         </div>
 
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#52525b', fontSize: 14 }}>Loading...</div>
+          <div style={empty}>Loading...</div>
         ) : prompts.length === 0 ? (
-          <div style={{ padding: 64, textAlign: 'center' }}>
-            <FileText size={32} color="#27272a" style={{ margin: '0 auto 12px' }} />
-            <p style={{ color: '#52525b', fontSize: 14 }}>No prompts found. Create your first one.</p>
+          <div style={empty}>
+            <DocIcon />
+            <p style={{ marginTop: 12, color: '#374151' }}>No prompts yet. Create your first one.</p>
           </div>
-        ) : (
-          prompts.map((p, i) => (
-            <a key={p.id} href={`/prompts/${p.slug}`} style={{ textDecoration: 'none' }}>
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 140px 120px 100px 120px',
-                padding: '14px 20px',
-                borderBottom: i < prompts.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                alignItems: 'center',
-                cursor: 'pointer',
-                transition: 'background 0.15s',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(124,106,247,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <FileText size={14} color="#7c6af7" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 14, color: '#f4f4f5', fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 12, color: '#52525b', fontFamily: 'DM Mono, monospace', marginTop: 1 }}>{p.slug}</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {p.tags.slice(0, 2).map(tag => (
-                    <span key={tag} style={{ padding: '2px 7px', background: 'rgba(124,106,247,0.08)', color: '#a78bfa', borderRadius: 5, fontSize: 11 }}>{tag}</span>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#71717a', fontSize: 13 }}>
-                  <GitBranch size={13} />
-                  {p.version_count}
+        ) : prompts.map((p, i) => (
+          <a key={p.id} href={`/prompts/${p.slug}`} style={{ textDecoration: 'none' }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+              padding: '16px 22px',
+              borderBottom: i < prompts.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              alignItems: 'center', cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.04)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={iconBox}>
+                  <DocIcon color="#6366f1" />
                 </div>
                 <div>
-                  <span style={{ padding: '3px 8px', background: 'rgba(74,222,128,0.08)', color: '#4ade80', borderRadius: 6, fontSize: 11 }}>
-                    active
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, color: '#52525b' }}>
-                  {new Date(p.updated_at).toLocaleDateString()}
+                  <div style={{ fontSize: 15, color: '#f9fafb', fontFamily: 'EB Garamond, serif', fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: '#374151', fontFamily: 'JetBrains Mono, monospace', marginTop: 2 }}>{p.slug}</div>
                 </div>
               </div>
-            </a>
-          ))
-        )}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                {p.tags.slice(0, 2).map(tag => (
+                  <span key={tag} style={tagStyle}>{tag}</span>
+                ))}
+              </div>
+              <div style={{ fontSize: 14, color: '#4b5563', fontFamily: 'JetBrains Mono, monospace' }}>
+                {p.version_count ?? 0}
+              </div>
+              <div style={{ fontSize: 13, color: '#374151', fontFamily: 'JetBrains Mono, monospace' }}>
+                {new Date(p.updated_at).toLocaleDateString()}
+              </div>
+            </div>
+          </a>
+        ))}
       </div>
 
       {/* Create Modal */}
       {showCreate && (
-        <div style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 50,
-        }}>
-          <div style={{
-            background: '#111113',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 16,
-            padding: 32,
-            width: 480,
-          }}>
-            <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 700, color: '#f4f4f5', marginBottom: 6 }}>New Prompt</h2>
-            <p style={{ color: '#71717a', fontSize: 14, marginBottom: 24 }}>Create a new prompt. You can add versions and messages after.</p>
+        <div style={overlay}>
+          <div style={modal}>
+            <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontStyle: 'italic', fontWeight: 600, color: '#f9fafb', marginBottom: 6 }}>New Prompt</h2>
+            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Create a versioned prompt. Add messages after creation.</p>
 
-            {error && <div style={{ padding: '10px 14px', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, color: '#f87171', fontSize: 13, marginBottom: 16 }}>{error}</div>}
+            {error && <div style={errorBox}>{error}</div>}
 
             {[
               { key: 'name', label: 'Name', placeholder: 'Summarise Email' },
               { key: 'slug', label: 'Slug', placeholder: 'summarise-email' },
-              { key: 'description', label: 'Description (optional)', placeholder: 'Summarises an email into 3 bullet points' },
-              { key: 'tags', label: 'Tags (comma separated)', placeholder: 'email, summarisation' },
+              { key: 'description', label: 'Description', placeholder: 'Optional' },
+              { key: 'tags', label: 'Tags', placeholder: 'email, summarisation' },
             ].map(({ key, label, placeholder }) => (
               <div key={key} style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 13, color: '#a1a1aa', marginBottom: 6 }}>{label}</label>
+                <label style={labelStyle}>{label}</label>
                 <input
                   value={form[key as keyof typeof form]}
                   onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                   placeholder={placeholder}
-                  style={{
-                    width: '100%', padding: '9px 12px',
-                    background: '#18181b', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 8, color: '#f4f4f5', fontSize: 14, outline: 'none',
-                  }}
+                  style={input}
                 />
               </div>
             ))}
 
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-              <button onClick={() => setShowCreate(false)} style={{ padding: '9px 18px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#71717a', fontSize: 14, cursor: 'pointer' }}>
-                Cancel
-              </button>
-              <button onClick={createPrompt} disabled={creating} style={{ padding: '9px 18px', background: '#7c6af7', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', opacity: creating ? 0.6 : 1 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
+              <button onClick={() => setShowCreate(false)} style={btnGhost}>Cancel</button>
+              <button onClick={createPrompt} disabled={creating} style={{ ...btnPrimary, opacity: creating ? 0.6 : 1 }}>
                 {creating ? 'Creating...' : 'Create Prompt'}
               </button>
             </div>
@@ -217,3 +161,23 @@ export default function PromptsPage() {
     </div>
   )
 }
+
+const page: React.CSSProperties = { padding: '44px 52px', maxWidth: 1100, fontFamily: 'EB Garamond, Georgia, serif' }
+const heading: React.CSSProperties = { fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 32, fontWeight: 600, fontStyle: 'italic', color: '#f9fafb', letterSpacing: '-0.03em', marginBottom: 6 }
+const sub: React.CSSProperties = { color: '#4b5563', fontSize: 16 }
+const input: React.CSSProperties = { width: '100%', padding: '10px 14px', background: '#0c1122', border: '1px solid #1f2937', borderRadius: 9, color: '#f9fafb', fontSize: 14, outline: 'none', fontFamily: 'EB Garamond, serif' }
+const labelStyle: React.CSSProperties = { display: 'block', fontSize: 13, color: '#6b7280', marginBottom: 6, fontFamily: 'JetBrains Mono, monospace' }
+const table: React.CSSProperties = { border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, overflow: 'hidden', background: '#0c1122' }
+const tableHead: React.CSSProperties = { display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', padding: '10px 22px', background: '#0a0f1e', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 11, color: '#374151', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase' as const, letterSpacing: '0.07em' }
+const empty: React.CSSProperties = { padding: '64px 24px', textAlign: 'center', color: '#374151', fontSize: 15 }
+const iconBox: React.CSSProperties = { width: 36, height: 36, borderRadius: 10, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }
+const tagStyle: React.CSSProperties = { padding: '2px 8px', background: 'rgba(99,102,241,0.08)', color: '#818cf8', borderRadius: 5, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }
+const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }
+const modal: React.CSSProperties = { background: '#0c1122', border: '1px solid #1f2937', borderRadius: 16, padding: '32px 36px', width: 480 }
+const errorBox: React.CSSProperties = { padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, color: '#ef4444', fontSize: 13, marginBottom: 16 }
+const btnPrimary: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'EB Garamond, serif' }
+const btnGhost: React.CSSProperties = { padding: '10px 18px', background: 'transparent', border: '1px solid #1f2937', borderRadius: 10, color: '#6b7280', fontSize: 14, cursor: 'pointer', fontFamily: 'EB Garamond, serif' }
+
+function PlusIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> }
+function SearchIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> }
+function DocIcon({ color = '#374151' }: { color?: string }) { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> }

@@ -1,5 +1,4 @@
-version: '3.9'
-
+# docker-compose.yml
 services:
 
   # ── PostgreSQL Database ──────────────────────
@@ -33,9 +32,16 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # Use individual variables instead of DATABASE_URL to avoid SASL issues
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: promptops
+      PGUSER: promptops
+      PGPASSWORD: promptops
+      # Keep these for compatibility
       DATABASE_URL: postgresql://promptops:promptops@postgres:5432/promptops
       PORT: 3001
-      NODE_ENV: production
+      NODE_ENV: development
       ALLOWED_ORIGINS: http://localhost:3000
     ports:
       - '3001:3001'

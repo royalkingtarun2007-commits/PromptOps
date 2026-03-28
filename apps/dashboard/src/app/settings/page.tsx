@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Copy, Eye, EyeOff, Key } from 'lucide-react'
 import { api } from '@/lib/api'
 
 interface ApiKey {
@@ -22,6 +21,7 @@ export default function SettingsPage() {
   const [creating, setCreating] = useState(false)
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [showKey, setShowKey] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('promptops_key')
@@ -39,7 +39,7 @@ export default function SettingsPage() {
 
   function saveKey() {
     localStorage.setItem('promptops_key', apiKeyInput)
-    alert('API key saved to browser storage.')
+    alert('API key saved.')
   }
 
   async function createKey() {
@@ -49,9 +49,8 @@ export default function SettingsPage() {
       const data = await api.post<{ key: string } & ApiKey>('/v1/api-keys', { name: newKeyName })
       setCreatedKey(data.key)
       fetchKeys()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create key')
-    } finally { setCreating(false) }
+    } catch (err) { alert(err instanceof Error ? err.message : 'Failed') }
+    finally { setCreating(false) }
   }
 
   async function revokeKey(id: string) {
@@ -60,18 +59,25 @@ export default function SettingsPage() {
     setKeys(prev => prev.filter(k => k.id !== id))
   }
 
+  function copyCreatedKey() {
+    if (!createdKey) return
+    navigator.clipboard.writeText(createdKey)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
-    <div style={{ padding: '40px 48px', maxWidth: 800 }}>
+    <div style={page}>
       <div style={{ marginBottom: 40 }}>
-        <p style={{ fontSize: 12, color: '#7c6af7', fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>// Settings</p>
-        <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 28, fontWeight: 700, color: '#f4f4f5', letterSpacing: '-0.03em' }}>API Keys</h1>
-        <p style={{ color: '#71717a', fontSize: 15, marginTop: 6 }}>Manage API keys for your workspace.</p>
+        <h1 style={heading}>API Keys</h1>
+        <p style={sub}>Manage access keys for your workspace.</p>
       </div>
 
-      {/* Active key input */}
-      <div style={{ padding: 24, background: '#111113', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, marginBottom: 32 }}>
-        <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 600, color: '#f4f4f5', marginBottom: 4 }}>Active API Key</h2>
-        <p style={{ fontSize: 13, color: '#71717a', marginBottom: 16 }}>This key is used by the dashboard to make API calls. Stored in your browser only.</p>
+      {/* Active key */}
+      <div style={card}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,#6366f1,transparent)' }} />
+        <h2 style={cardHeading}>Active key</h2>
+        <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 18 }}>Used by the dashboard to make API calls. Stored in your browser only.</p>
         <div style={{ display: 'flex', gap: 10 }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <input
@@ -79,92 +85,86 @@ export default function SettingsPage() {
               value={apiKeyInput}
               onChange={e => setApiKeyInput(e.target.value)}
               placeholder="po_live_..."
-              style={{ width: '100%', padding: '9px 40px 9px 12px', background: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#f4f4f5', fontSize: 14, outline: 'none', fontFamily: 'DM Mono, monospace' }}
+              style={{ ...input, fontFamily: 'JetBrains Mono, monospace', fontSize: 13, paddingRight: 40 }}
             />
-            <button onClick={() => setShowKey(s => !s)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#52525b' }}>
-              {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+            <button onClick={() => setShowKey(s => !s)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>
+              {showKey ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
-          <button onClick={saveKey} style={{ padding: '9px 18px', background: '#7c6af7', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-            Save
-          </button>
+          <button onClick={saveKey} style={btnPrimary}>Save</button>
         </div>
       </div>
 
       {/* Keys list */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 600, color: '#f4f4f5' }}>All Keys</h2>
-        <button onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'rgba(124,106,247,0.1)', border: '1px solid rgba(124,106,247,0.2)', borderRadius: 8, color: '#a78bfa', fontSize: 13, cursor: 'pointer' }}>
-          <Plus size={14} /> New Key
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 600, fontStyle: 'italic', color: '#f9fafb' }}>All keys</h2>
+        <button onClick={() => setShowCreate(true)} style={btnGhost}>
+          <PlusIcon /> New Key
         </button>
       </div>
 
-      <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: 14, overflow: 'hidden', background: '#0c1122' }}>
         {loading ? (
-          <div style={{ padding: 32, textAlign: 'center', color: '#52525b', fontSize: 14 }}>Loading...</div>
+          <div style={empty}>Loading...</div>
         ) : keys.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center' }}>
-            <Key size={28} color="#27272a" style={{ margin: '0 auto 10px', display: 'block' }} />
-            <p style={{ color: '#52525b', fontSize: 14 }}>No API keys yet. Create one to get started.</p>
+          <div style={{ ...empty, flexDirection: 'column' as const, display: 'flex', alignItems: 'center' }}>
+            <KeyIcon />
+            <p style={{ marginTop: 12, color: '#374151', fontFamily: 'EB Garamond, serif' }}>No API keys yet.</p>
           </div>
         ) : keys.map((key, i) => (
           <div key={key.id} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '14px 20px',
+            padding: '15px 22px',
             borderBottom: i < keys.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(124,106,247,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Key size={13} color="#7c6af7" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <KeyIcon small />
               </div>
               <div>
-                <div style={{ fontSize: 14, color: '#f4f4f5', fontWeight: 500 }}>{key.name}</div>
-                <div style={{ fontSize: 12, color: '#52525b', fontFamily: 'DM Mono, monospace', marginTop: 1 }}>{key.key_prefix}...</div>
+                <div style={{ fontSize: 15, color: '#f9fafb', fontFamily: 'EB Garamond, serif', fontWeight: 600 }}>{key.name}</div>
+                <div style={{ fontSize: 12, color: '#374151', fontFamily: 'JetBrains Mono, monospace', marginTop: 2 }}>{key.key_prefix}...</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ fontSize: 12, color: '#52525b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <span style={{ fontSize: 12, color: '#374151', fontFamily: 'JetBrains Mono, monospace' }}>
                 {key.last_used_at ? `Last used ${new Date(key.last_used_at).toLocaleDateString()}` : 'Never used'}
               </span>
-              <button onClick={() => revokeKey(key.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#52525b', padding: 4, display: 'flex', alignItems: 'center' }}>
-                <Trash2 size={14} />
+              <button onClick={() => revokeKey(key.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', padding: 4 }}>
+                <TrashIcon />
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Create key modal */}
+      {/* Create modal */}
       {showCreate && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 32, width: 420 }}>
+        <div style={overlay}>
+          <div style={modal}>
             {createdKey ? (
               <>
-                <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 700, color: '#4ade80', marginBottom: 8 }}>Key Created!</h2>
-                <p style={{ fontSize: 13, color: '#71717a', marginBottom: 16 }}>Copy this key now. It will <strong style={{ color: '#f4f4f5' }}>not</strong> be shown again.</p>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 14px', background: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, marginBottom: 20 }}>
-                  <code style={{ flex: 1, fontSize: 12, color: '#a78bfa', fontFamily: 'DM Mono, monospace', wordBreak: 'break-all' }}>{createdKey}</code>
-                  <button onClick={() => navigator.clipboard.writeText(createdKey)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#71717a', flexShrink: 0 }}>
-                    <Copy size={14} />
-                  </button>
+                <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontStyle: 'italic', fontWeight: 600, color: '#10b981', marginBottom: 8 }}>Key created</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 20 }}>Copy this key now. It will not be shown again.</p>
+                <div style={{ background: '#0a0f1e', border: '1px solid #1f2937', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, color: '#374151', fontFamily: 'JetBrains Mono, monospace', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.07em' }}>API Key</div>
+                  <code style={{ fontSize: 12, color: '#a5b4fc', fontFamily: 'JetBrains Mono, monospace', wordBreak: 'break-all' as const, lineHeight: 1.7 }}>{createdKey}</code>
                 </div>
-                <button onClick={() => { setShowCreate(false); setCreatedKey(null); setNewKeyName('') }} style={{ width: '100%', padding: '10px', background: '#7c6af7', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                <button onClick={copyCreatedKey} style={{ ...btnGhost, width: '100%', justifyContent: 'center', marginBottom: 10 }}>
+                  {copied ? 'Copied' : 'Copy to clipboard'}
+                </button>
+                <button onClick={() => { setShowCreate(false); setCreatedKey(null); setNewKeyName('') }} style={{ ...btnPrimary, width: '100%', justifyContent: 'center' }}>
                   Done
                 </button>
               </>
             ) : (
               <>
-                <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 700, color: '#f4f4f5', marginBottom: 20 }}>Create API Key</h2>
-                <label style={{ display: 'block', fontSize: 13, color: '#a1a1aa', marginBottom: 6 }}>Key Name</label>
-                <input
-                  value={newKeyName}
-                  onChange={e => setNewKeyName(e.target.value)}
-                  placeholder="Production Key"
-                  style={{ width: '100%', padding: '9px 12px', background: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#f4f4f5', fontSize: 14, outline: 'none', marginBottom: 20 }}
-                />
+                <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontStyle: 'italic', fontWeight: 600, color: '#f9fafb', marginBottom: 20 }}>Create API key</h2>
+                <label style={labelStyle}>Key name</label>
+                <input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="Production Key" style={{ ...input, marginBottom: 20 }} />
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button onClick={() => setShowCreate(false)} style={{ padding: '9px 18px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#71717a', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
-                  <button onClick={createKey} disabled={creating} style={{ padding: '9px 18px', background: '#7c6af7', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', opacity: creating ? 0.6 : 1 }}>
+                  <button onClick={() => setShowCreate(false)} style={btnGhostSm}>Cancel</button>
+                  <button onClick={createKey} disabled={creating} style={{ ...btnPrimary, opacity: creating ? 0.6 : 1 }}>
                     {creating ? 'Creating...' : 'Create Key'}
                   </button>
                 </div>
@@ -176,3 +176,23 @@ export default function SettingsPage() {
     </div>
   )
 }
+
+const page: React.CSSProperties = { padding: '44px 52px', maxWidth: 800, fontFamily: 'EB Garamond, Georgia, serif' }
+const heading: React.CSSProperties = { fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 600, fontStyle: 'italic', color: '#f9fafb', letterSpacing: '-0.03em', marginBottom: 6 }
+const sub: React.CSSProperties = { color: '#4b5563', fontSize: 16 }
+const card: React.CSSProperties = { padding: '24px 26px', background: '#0c1122', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, marginBottom: 32, position: 'relative', overflow: 'hidden' }
+const cardHeading: React.CSSProperties = { fontFamily: 'Cormorant Garamond, serif', fontSize: 18, fontWeight: 600, fontStyle: 'italic', color: '#f9fafb', marginBottom: 6 }
+const input: React.CSSProperties = { width: '100%', padding: '10px 14px', background: '#0a0f1e', border: '1px solid #1f2937', borderRadius: 9, color: '#f9fafb', fontSize: 14, outline: 'none', fontFamily: 'EB Garamond, serif' }
+const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, color: '#6b7280', marginBottom: 6, fontFamily: 'JetBrains Mono, monospace' }
+const empty: React.CSSProperties = { padding: '48px 24px', textAlign: 'center', color: '#374151', fontSize: 14 }
+const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }
+const modal: React.CSSProperties = { background: '#0c1122', border: '1px solid #1f2937', borderRadius: 16, padding: '32px 36px', width: 440 }
+const btnPrimary: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'EB Garamond, serif' }
+const btnGhost: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: 'transparent', border: '1px solid #1f2937', borderRadius: 9, color: '#6b7280', fontSize: 14, cursor: 'pointer', fontFamily: 'EB Garamond, serif' }
+const btnGhostSm: React.CSSProperties = { padding: '9px 16px', background: 'transparent', border: '1px solid #1f2937', borderRadius: 9, color: '#6b7280', fontSize: 14, cursor: 'pointer', fontFamily: 'EB Garamond, serif' }
+
+function PlusIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> }
+function KeyIcon({ small }: { small?: boolean }) { return <svg width={small ? 14 : 24} height={small ? 14 : 24} viewBox="0 0 24 24" fill="none" stroke={small ? '#6366f1' : '#1f2937'} strokeWidth="1.8" strokeLinecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> }
+function TrashIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg> }
+function EyeIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
+function EyeOffIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> }
