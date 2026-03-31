@@ -25,3 +25,5 @@ input:focus {
 ::-webkit-scrollbar-thumb { background: #111827; border-radius: 2px; }
 
 a { color: inherit; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
