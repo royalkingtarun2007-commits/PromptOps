@@ -44,7 +44,7 @@ PromptOps fixes this by treating prompts as **first-class engineering artifacts*
 ### 1. Start the server
 
 ```bash
-git clone https://github.com/your-username/promptops
+git clone https://github.com/royalkingtarun2007-commits/PromptOps
 cd promptops
 docker compose up
 ```
