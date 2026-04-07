@@ -1,5 +1,3 @@
--- PromptOps Database Schema
--- Run this to set up your database from scratch
 
 -- ── Extensions ────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
